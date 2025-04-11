@@ -1,32 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Button, StyleSheet, Dimensions, ScrollView, Animated } from 'react-native';
+import { 
+  View, Text, Button, StyleSheet, Dimensions, ScrollView, Animated 
+} from 'react-native';
 import Slider from '@react-native-community/slider';
 import { LineChart } from 'react-native-chart-kit';
+import TheoreticalGuide from './TheoreticalGuide';
 
 interface Bubble {
   id: number;
-  left: number; // position inside the glass (percentage 0–100)
-  side: 'left' | 'right'; // which glass the bubble belongs to
+  left: number; // Horizontal position within a glass as percentage (0–100)
+  side: 'left' | 'right'; // Indicates which glass the bubble appears in
 }
 
 interface ExperimentationScreenProps {
   onBack: () => void;
-  onShowGuide: () => void;
 }
 
-// FloatingBubble component: Each bubble animates upward (rising to the water surface) and fades out.
+//
+// FloatingBubble component: animates upward (to the water’s surface) and fades out.
+//
 const FloatingBubble: React.FC<{ left: number }> = ({ left }) => {
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
-
-  // Convert percentage to pixel value. (Assumes each glass's width is roughly half the container.)
+  
+  // Each glass is about half the container width.
   const containerWidth = (Dimensions.get('window').width - 20) / 2;
   const pixelLeft = (left / 100) * containerWidth;
-
+  
   useEffect(() => {
     Animated.parallel([
       Animated.timing(translateY, {
-        toValue: -150, // bubble rises upward by 150 pixels (adjustable)
+        toValue: -150, // Bubble travels upward by 150 pixels
         duration: 3000,
         useNativeDriver: true,
       }),
@@ -52,26 +56,30 @@ const FloatingBubble: React.FC<{ left: number }> = ({ left }) => {
   );
 };
 
-const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, onShowGuide }) => {
+const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack }) => {
   const [voltage, setVoltage] = useState<number>(5);
   const [current, setCurrent] = useState<number>(0.5);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
-
-  // Data tracking states for the graph.
+  const [showGuide, setShowGuide] = useState<boolean>(false);
+  
+  // Data tracking for the graph.
   const [time, setTime] = useState<number>(0);
   const [hydrogenData, setHydrogenData] = useState<number[]>([]);
   const [oxygenData, setOxygenData] = useState<number[]>([]);
 
-  // Arbitrary production factor to simulate gas production.
+  // Production factor (arbitrary) for simulating gas production.
   const productionFactor = 10;
 
-  // Generate bubbles if voltage/current are above thresholds.
+  // Faraday's constant (Coulomb per mol)
+  const faraday = 96485;
+
+  // Generate bubbles if voltage/current exceed thresholds.
   useEffect(() => {
     if (voltage > 1 && current > 0.1) {
       const bubbleInterval = setInterval(() => {
         const newBubble: Bubble = {
           id: Date.now(),
-          left: Math.random() * 80 + 10, // random horizontal position within the glass (10%-90%)
+          left: Math.random() * 80 + 10, // random horizontal position (10%-90%)
           side: Math.random() < 0.5 ? 'left' : 'right',
         };
         setBubbles(prev => [...prev, newBubble]);
@@ -79,21 +87,21 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
       return () => clearInterval(bubbleInterval);
     }
   }, [voltage, current]);
-
-  // Remove bubbles after they've been visible for 3 seconds.
+  
+  // Remove bubbles older than 3 seconds.
   useEffect(() => {
     const removeInterval = setInterval(() => {
       setBubbles(prev => prev.filter(bubble => Date.now() - bubble.id < 3000));
     }, 500);
     return () => clearInterval(removeInterval);
   }, []);
-
-  // Data tracking: update gas production data every second when conditions are met.
+  
+  // Data tracking: update gas production every second.
   useEffect(() => {
     const trackingInterval = setInterval(() => {
       if (voltage > 1 && current > 0.1) {
-        // Hydrogen production is proportional to current * productionFactor.
-        // Oxygen production is half of that (due to the 2:1 mole ratio in water electrolysis).
+        // Hydrogen production: proportional to (current * productionFactor).
+        // Oxygen production: half of hydrogen (due to 2:1 mole ratio).
         const hydrogenProduced = current * productionFactor;
         const oxygenProduced = (current * productionFactor) / 2;
         setHydrogenData(prev => [...prev, (prev.slice(-1)[0] || 0) + hydrogenProduced]);
@@ -103,26 +111,35 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
     }, 1000);
     return () => clearInterval(trackingInterval);
   }, [voltage, current]);
-
-  // Prepare chart data for the last 10 seconds.
+  
+  // Prepare chart data for last 10 seconds.
   const chartLabels = Array.from({ length: time }, (_, i) => i.toString()).slice(-10);
   const chartHydrogenData = hydrogenData.slice(-10);
   const chartOxygenData = oxygenData.slice(-10);
 
-  // Total cumulative values.
+  // Total cumulative production.
   const totalHydrogen = hydrogenData.length ? hydrogenData[hydrogenData.length - 1] : 0;
   const totalOxygen = oxygenData.length ? oxygenData[oxygenData.length - 1] : 0;
 
+  // Reaction speeds at the electrodes (using Faraday’s law).
+  // At the cathode (producing H₂): electrons required = 2, so mol/s = I / (2 * F).
+  const hydrogenRate = current / (2 * faraday);
+  // At the anode (producing O₂): electrons required = 4, so mol/s = I / (4 * F).
+  const oxygenRate = current / (4 * faraday);
+
   return (
     <ScrollView style={styles.container}>
+      {/* Header with local Guide state; back button now only returns to main menu */}
       <View style={styles.headerBar}>
         <Button title="Back" onPress={onBack} color="#007BFF" />
-        <Text style={styles.headerTitle}>Experimentation</Text>
-        <Button title="Guide" onPress={onShowGuide} color="#007BFF" />
+        <Text style={styles.headerTitle}>Experimentare</Text>
+        <Button title="Ghid" onPress={() => setShowGuide(true)} color="#007BFF" />
       </View>
 
+      {showGuide && <TheoreticalGuide onClose={() => setShowGuide(false)} />}
+      
       <View style={styles.controls}>
-        <Text style={styles.controlLabel}>Voltage: {voltage.toFixed(1)} V</Text>
+        <Text style={styles.controlLabel}>Tensiune: {voltage.toFixed(1)} V</Text>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -133,7 +150,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
           minimumTrackTintColor="#007BFF"
           maximumTrackTintColor="#ccc"
         />
-        <Text style={styles.controlLabel}>Current: {current.toFixed(1)} A</Text>
+        <Text style={styles.controlLabel}>Intensitate: {current.toFixed(1)} A</Text>
         <Slider
           style={styles.slider}
           minimumValue={0.1}
@@ -146,7 +163,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
         />
       </View>
 
-      {/* New Lab Area with two glasses and a salt bridge */}
+      {/* Lab Area: Two glasses with water, each with a nail, connected by a salt bridge */}
       <View style={styles.labArea}>
         <View style={styles.glassContainer}>
           {/* Left Glass */}
@@ -192,7 +209,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
       </View>
 
       {/* Data Tracking Graph */}
-      <Text style={styles.graphTitle}>Gas Production Rates</Text>
+      <Text style={styles.graphTitle}>Rate de Producție a Gazelor</Text>
       <LineChart
         data={{
           labels: chartLabels,
@@ -208,7 +225,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
               strokeWidth: 2,
             },
           ],
-          legend: ['Hydrogen', 'Oxygen'],
+          legend: ['Hidrogen', 'Oxigen'],
         }}
         width={Dimensions.get('window').width - 20}
         height={220}
@@ -219,9 +236,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
           decimalPlaces: 1,
           color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
           labelColor: (opacity = 1) => `rgba(51, 51, 51, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
+          style: { borderRadius: 16 },
           propsForDots: {
             r: '3',
             strokeWidth: '1',
@@ -236,20 +251,36 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack, o
         }}
       />
       <Text style={styles.axisCaption}>
-        X-axis: Time (s) | Y-axis: Cumulative Gas Production
+        X: Timp (s) | Y: Producție cumulativă
       </Text>
 
-      {/* Additional Graph Information */}
+      {/* Additional Information */}
       <View style={styles.graphInfo}>
-        <Text style={styles.infoText}>Simulation Time: {time} s</Text>
+        <Text style={styles.infoText}>Timp de simulare: {time} s</Text>
         <Text style={styles.infoText}>
-          Voltage: {voltage.toFixed(1)} V | Current: {current.toFixed(1)} A
+          Tensiune: {voltage.toFixed(1)} V | Intensitate: {current.toFixed(1)} A
         </Text>
         <Text style={styles.infoText}>
-          Total Hydrogen Produced: {totalHydrogen.toFixed(1)} units
+          Total Hidrogen produs: {totalHydrogen.toFixed(1)} unități
         </Text>
         <Text style={styles.infoText}>
-          Total Oxygen Produced: {totalOxygen.toFixed(1)} units
+          Total Oxigen produs: {totalOxygen.toFixed(1)} unități
+        </Text>
+      </View>
+
+      {/* Reaction Speed Calculations */}
+      <View style={styles.graphInfo}>
+        <Text style={[styles.infoText, { fontWeight: 'bold' }]}>
+          Viteza reacției electrolitice:
+        </Text>
+        <Text style={styles.infoText}>
+          La catod (Hidrogen): {hydrogenRate.toExponential(2)} mol/s
+        </Text>
+        <Text style={styles.infoText}>
+          La anod (Oxigen): {oxygenRate.toExponential(2)} mol/s
+        </Text>
+        <Text style={styles.infoText}>
+          Formula: Pentru Hidrogen, rate = I / (2·F); pentru Oxigen, rate = I / (4·F)
         </Text>
       </View>
     </ScrollView>
@@ -292,7 +323,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 20,
   },
-  // New glass container (for two glasses and a salt bridge)
   glassContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -341,7 +371,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
   },
-  // Salt bridge connecting the two glasses.
   saltBridge: {
     width: '15%',
     height: 50,

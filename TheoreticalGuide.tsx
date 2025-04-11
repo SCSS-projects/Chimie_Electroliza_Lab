@@ -11,19 +11,25 @@ const TheoreticalGuide: React.FC<TheoreticalGuideProps> = ({ onClose }) => {
       <View style={styles.content}>
         <Button title="Închide" onPress={onClose} color="#007BFF" />
         <Text style={styles.header}>Ghid Teoretic</Text>
-        <Text style={styles.sectionHeader}>Teoria Electrolizei</Text>
+        
+        <Text style={styles.sectionHeader}>Electroliza Apei</Text>
         <Text style={styles.text}>
-          Electroliza apei implică descompunerea apei în hidrogen și oxigen prin aplicarea unui curent electric. 
-          Formula principală este: 2H₂O(l) → 2H₂(g) + O₂(g).
+          Electroliza apei implică descompunerea acesteia în hidrogen și oxigen prin aplicarea unui curent electric.
+          Reacția principală este: {"\n"}2H₂O(l) → 2H₂(g) + O₂(g)
         </Text>
+        
         <Text style={styles.sectionHeader}>Puntea de Sare</Text>
         <Text style={styles.text}>
           Puntea de sare permite migrarea ionilor (Na⁺ și Cl⁻) între cele două pahare, menținând echilibrul electric.
         </Text>
-        <Text style={styles.sectionHeader}>Formule Suplimentare</Text>
+        
+        <Text style={styles.sectionHeader}>Calculul Vitezei Reacției Electrolitice</Text>
         <Text style={styles.text}>
-          • 2NaCl → 2Na⁺ + 2Cl⁻{"\n"}
-          • 2H₂O(l) → 2H₂(g) + O₂(g)
+          Pentru producția de hidrogen la catod:{"\n"}
+          Viteza = I / (2 · F) (mol/s){"\n"}
+          Pentru producția de oxigen la anod:{"\n"}
+          Viteza = I / (4 · F) (mol/s){"\n"}
+          unde I este intensitatea curentului în amperi și F este constanta lui Faraday (~96485 C/mol).
         </Text>
       </View>
     </View>
@@ -32,10 +38,15 @@ const TheoreticalGuide: React.FC<TheoreticalGuideProps> = ({ onClose }) => {
 
 const styles = StyleSheet.create({
   modal: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1000,
   },
   content: {
     width: '90%',
