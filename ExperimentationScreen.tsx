@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  View, Text, Button, StyleSheet, Dimensions, ScrollView, Animated, SafeAreaView 
+    View, Text, Button, StyleSheet, Dimensions, ScrollView, Animated, SafeAreaView 
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { LineChart } from 'react-native-chart-kit';
@@ -16,51 +16,58 @@ interface ExperimentationScreenProps {
   onBack: () => void;
 }
 
-// FloatingBubble component: animates upward (to the water's surface) and fades out.
+// FloatingBubble component: animates upward and fades out.
 const FloatingBubble: React.FC<{ left: number; side: string }> = ({ left, side }) => {
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
-  
-  // Each tube has proper width based on the container
+
+  // Define parameters based on bubble type.
+  const bubbleSize = side === 'right' ? 10 : 20;
+  const animationDuration = side === 'right' ? 5000 : 3000;
+  const bubbleColor = side === 'right' ? 'black' : (side === 'left' ? 'rgba(173, 216, 230, 0.8)' : 'rgba(255, 255, 204, 0.8)');
+
+  // Each tube has proper width based on the container.
   const tubeWidth = (Dimensions.get('window').width - 80) / 2;
   const pixelLeft = (left / 100) * tubeWidth;
   
   useEffect(() => {
     Animated.parallel([
       Animated.timing(translateY, {
-        toValue: -150, // Bubble travels upward by 150 pixels
-        duration: 3000,
+        toValue: -150,
+        duration: animationDuration,
         useNativeDriver: true,
       }),
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 3000,
+        duration: animationDuration,
         useNativeDriver: true,
       }),
     ]).start();
-  }, [translateY, opacity]);
+  }, [translateY, opacity, animationDuration]);
 
   return (
     <Animated.View
       style={[
         styles.bubble,
         {
+          width: bubbleSize,
+          height: bubbleSize,
+          borderRadius: bubbleSize / 2,
           left: pixelLeft,
           transform: [{ translateY }],
           opacity,
-          backgroundColor: side === 'left' ? 'rgba(173, 216, 230, 0.8)' : 'rgba(255, 255, 204, 0.8)',
+          backgroundColor: bubbleColor,
         },
       ]}
     />
   );
 };
 
-// Moving Ion component for the salt bridge
+// MovingIon component for the salt bridge.
 const MovingIon: React.FC<{ initialPosition: number }> = ({ initialPosition }) => {
   const position = useRef(new Animated.Value(initialPosition)).current;
   
   useEffect(() => {
-    // Start ion at random position for natural effect
     position.setValue(initialPosition);
   }, [initialPosition]);
   
@@ -77,6 +84,37 @@ const MovingIon: React.FC<{ initialPosition: number }> = ({ initialPosition }) =
   );
 };
 
+// Updated Screw component remains unchanged in implementation:
+const Screw: React.FC<{ position: 'left' | 'right' }> = ({ position }) => (
+  <View style={[
+    styles.screw, 
+    position === 'left' ? styles.leftScrew : styles.rightScrew
+  ]}>
+    <Text style={styles.screwText}>Pt</Text>
+  </View>
+);
+
+// Adaugă componenta Battery
+const Battery: React.FC = () => (
+  <View style={styles.batteryContainer}>
+    <View style={styles.battery}>
+      <Text style={styles.batteryLabel}>Acumulator</Text>
+    </View>
+    {/* Fire de conexiune */}
+    <View style={styles.wireRed} />
+    <View style={styles.wireBlue} />
+  </View>
+);
+
+const GasLabel: React.FC<{ position: 'left' | 'right'; text: string }> = ({ position, text }) => (
+  <Text style={[
+    styles.gasLabel, 
+    position === 'left' ? styles.leftGasLabel : styles.rightGasLabel
+  ]}>
+    {text}
+  </Text>
+);
+
 const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack }) => {
   const [voltage, setVoltage] = useState<number>(5);
   const [current, setCurrent] = useState<number>(0.5);
@@ -88,13 +126,9 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
   const [hydrogenData, setHydrogenData] = useState<number[]>([]);
   const [oxygenData, setOxygenData] = useState<number[]>([]);
 
-  // Production factor (arbitrary) for simulating gas production.
   const productionFactor = 10;
-
-  // Faraday's constant (Coulomb per mol)
   const faraday = 96485;
-
-  // Generate bubbles if voltage/current exceed thresholds.
+  
   useEffect(() => {
     if (voltage > 1 && current > 0.1) {
       const bubbleInterval = setInterval(() => {
@@ -109,7 +143,6 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
     }
   }, [voltage, current]);
   
-  // Remove bubbles older than 3 seconds.
   useEffect(() => {
     const removeInterval = setInterval(() => {
       setBubbles(prev => prev.filter(bubble => Date.now() - bubble.id < 3000));
@@ -117,12 +150,9 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
     return () => clearInterval(removeInterval);
   }, []);
   
-  // Data tracking: update gas production every second.
   useEffect(() => {
     const trackingInterval = setInterval(() => {
       if (voltage > 1 && current > 0.1) {
-        // Hydrogen production: proportional to (current * productionFactor).
-        // Oxygen production: half of hydrogen (due to 2:1 mole ratio).
         const hydrogenProduced = current * productionFactor;
         const oxygenProduced = (current * productionFactor) / 2;
         setHydrogenData(prev => [...prev, (prev.slice(-1)[0] || 0) + hydrogenProduced]);
@@ -133,217 +163,182 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
     return () => clearInterval(trackingInterval);
   }, [voltage, current]);
   
-  // Prepare chart data for last 10 seconds.
   const chartLabels = Array.from({ length: Math.max(10, time) }, (_, i) => (i + 1).toString()).slice(-10);
-  const chartHydrogenData = hydrogenData.length ? [...Array(Math.max(0, 10 - hydrogenData.length)).fill(0), ...hydrogenData].slice(-10) : [0];
-  const chartOxygenData = oxygenData.length ? [...Array(Math.max(0, 10 - oxygenData.length)).fill(0), ...oxygenData].slice(-10) : [0];
+  const chartHydrogenData = hydrogenData.length 
+    ? [...Array(Math.max(0, 10 - hydrogenData.length)).fill(0), ...hydrogenData].slice(-10) 
+    : [0];
+  const chartOxygenData = oxygenData.length 
+    ? [...Array(Math.max(0, 10 - oxygenData.length)).fill(0), ...oxygenData].slice(-10) 
+    : [0];
 
-  // Total cumulative production.
   const totalHydrogen = hydrogenData.length ? hydrogenData[hydrogenData.length - 1] : 0;
   const totalOxygen = oxygenData.length ? oxygenData[oxygenData.length - 1] : 0;
 
-  // Reaction speeds at the electrodes (using Faraday's law).
-  // At the cathode (producing H₂): electrons required = 2, so mol/s = I / (2 * F).
   const hydrogenRate = current / (2 * faraday);
-  // At the anode (producing O₂): electrons required = 4, so mol/s = I / (4 * F).
   const oxygenRate = current / (4 * faraday);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {/* Header with local Guide state; back button now only returns to main menu */}
-        <View style={styles.headerBar}>
-          <Button title="BACK" onPress={onBack} color="#007BFF" />
-          <Text style={styles.headerTitle}>Experimentare</Text>
-          <Button title="GHID" onPress={() => setShowGuide(true)} color="#007BFF" />
-        </View>
-
-        {showGuide && <TheoreticalGuide onClose={() => setShowGuide(false)} />}
-        
-        <View style={styles.controls}>
-          <Text style={styles.controlLabel}>Voltage: {voltage.toFixed(1)} V</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={1}
-            maximumValue={12}
-            step={0.1}
-            value={voltage}
-            onValueChange={setVoltage}
-            minimumTrackTintColor="#007BFF"
-            maximumTrackTintColor="#ccc"
-            thumbTintColor="#009688"
-          />
-          <Text style={styles.controlLabel}>Current: {current.toFixed(1)} A</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0.1}
-            maximumValue={5}
-            step={0.1}
-            value={current}
-            onValueChange={setCurrent}
-            minimumTrackTintColor="#007BFF"
-            maximumTrackTintColor="#ccc"
-            thumbTintColor="#009688"
-          />
-        </View>
-
-        {/* Electrolysis Apparatus - Matching the provided image */}
-        <View style={styles.apparatusContainer}>
-          {/* Left Container */}
-          <View style={styles.leftContainer}>
-            <View style={styles.container1}>
-              <Text style={styles.gasLabel}>H₂(g)</Text>
-              <View style={[styles.solution, { backgroundColor: '#FFFFD6' }]}>
-                {bubbles
-                  .filter(bubble => bubble.side === 'left')
-                  .map(bubble => (
-                    <FloatingBubble key={bubble.id} left={bubble.left} side="left" />
-                  ))}
+      <View style={styles.mainContainer}>
+        {/* LEFT PANE: Controls, Graphs, and Data */}
+        <View style={styles.leftPane}>
+          <ScrollView style={styles.leftScroll} contentContainerStyle={styles.leftContent}>
+            <View style={styles.headerBar}>
+              <Button title="BACK" onPress={onBack} color="#007BFF" />
+              <Text style={styles.headerTitle}>Experimentare</Text>
+              <Button title="GHID" onPress={() => setShowGuide(true)} color="#007BFF" />
+            </View>
+            <View style={styles.controls}>
+              <View style={styles.sliderContainer}>
+                <Text style={styles.controlLabel}>Voltage: {voltage.toFixed(1)} V</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={1}
+                  maximumValue={12}
+                  step={0.1}
+                  value={voltage}
+                  onValueChange={setVoltage}
+                  minimumTrackTintColor="#007BFF"
+                  maximumTrackTintColor="#ccc"
+                  thumbTintColor="#009688"
+                />
               </View>
-              <View style={styles.electrode}>
-                <Text style={styles.electrodeLabel}>Fe</Text>
+              <View style={styles.sliderContainer}>
+                <Text style={styles.controlLabel}>Current: {current.toFixed(1)} A</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0.1}
+                  maximumValue={5}
+                  step={0.1}
+                  value={current}
+                  onValueChange={setCurrent}
+                  minimumTrackTintColor="#007BFF"
+                  maximumTrackTintColor="#ccc"
+                  thumbTintColor="#009688"
+                />
               </View>
             </View>
-          </View>
-          
-          {/* Salt Bridge */}
-          <View style={styles.saltBridgeContainer}>
-            <Text style={styles.saltBridgeLabel}>Salt Bridge</Text>
-            <View style={styles.saltBridge}>
-              <MovingIon initialPosition={20} />
-              <MovingIon initialPosition={80} />
-              <MovingIon initialPosition={140} />
-            </View>
-            <View style={styles.leftArm} />
-            <View style={styles.rightArm} />
-          </View>
-          
-          {/* Voltmeter */}
-          <View style={styles.voltmeterContainer}>
-            <View style={styles.horizontalWire} />
-            <View style={styles.voltmeter}>
-              <Text style={styles.voltmeterText}>V</Text>
-            </View>
-          </View>
-          
-          {/* Right Container should be here in the actual implementation */}
-          <View style={styles.rightContainer}>
-            <View style={styles.container2}>
-              <Text style={styles.gasLabel}>O₂(g)</Text>
-              <View style={[styles.solution, { backgroundColor: '#D6EAFF' }]}>
-                {bubbles
-                  .filter(bubble => bubble.side === 'right')
-                  .map(bubble => (
-                    <FloatingBubble key={bubble.id} left={bubble.left} side="right" />
-                  ))}
-              </View>
-              <View style={styles.electrode}>
-                <Text style={styles.electrodeLabel}>Fe</Text>
+            <View style={styles.circuitDiagram}>
+              <View style={styles.battery}>
+                <Text style={styles.batteryText}>DC Battery</Text>
+                <Text style={styles.batteryValue}>{voltage.toFixed(1)} V {current.toFixed(1)} A</Text>
               </View>
             </View>
-          </View>
-        </View>
-
-        {/* Circuit Diagram */}
-        <View style={styles.circuitDiagram}>
-          <View style={styles.battery}>
-            <Text style={styles.batteryText}>DC Battery</Text>
-            <Text style={styles.batteryValue}>{voltage.toFixed(1)} V {current.toFixed(1)} A</Text>
-          </View>
-        </View>
-
-        {/* Data Tracking Graph */}
-        <Text style={styles.graphTitle}>Rate de Producție a Gazelor</Text>
-        <LineChart
-          data={{
-            labels: chartLabels,
-            datasets: [
-              {
-                data: chartHydrogenData,
+            <Text style={styles.graphTitle}>Rate de Producție a Gazelor</Text>
+            <LineChart
+              data={{
+                labels: chartLabels,
+                datasets: [
+                  {
+                    data: chartHydrogenData,
+                    color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
+                    strokeWidth: 2,
+                  },
+                  {
+                    data: chartOxygenData,
+                    color: (opacity = 1) => `rgba(255, 193, 7, ${opacity})`,
+                    strokeWidth: 2,
+                  },
+                ],
+                legend: ['Hidrogen', 'Oxigen'],
+              }}
+              width={Dimensions.get('window').width * 0.55}
+              height={220}
+              chartConfig={{
+                backgroundColor: '#E3F2FD',
+                backgroundGradientFrom: '#E3F2FD',
+                backgroundGradientTo: '#E3F2FD',
+                decimalPlaces: 1,
                 color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
-                strokeWidth: 2,
-              },
-              {
-                data: chartOxygenData,
-                color: (opacity = 1) => `rgba(255, 193, 7, ${opacity})`,
-                strokeWidth: 2,
-              },
-            ],
-            legend: ['Hidrogen', 'Oxigen'],
-          }}
-          width={Dimensions.get('window').width - 20}
-          height={220}
-          chartConfig={{
-            backgroundColor: '#E3F2FD',
-            backgroundGradientFrom: '#E3F2FD',
-            backgroundGradientTo: '#E3F2FD',
-            decimalPlaces: 1,
-            color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(51, 51, 51, ${opacity})`,
-            style: { borderRadius: 16 },
-            propsForDots: {
-              r: '3',
-              strokeWidth: '1',
-              stroke: '#007BFF',
-            },
-            fillShadowGradientOpacity: 0.6,
-          }}
-          bezier
-          withInnerLines={true}
-          withOuterLines={true}
-          fromZero={true}
-          style={{
-            marginVertical: 8,
-            borderRadius: 16,
-            alignSelf: 'center',
-          }}
-        />
-        <Text style={styles.axisCaption}>
-          X: Timp (s) | Y: Producție cumulativă
-        </Text>
-
-        {/* Additional Information */}
-        <View style={styles.graphInfo}>
-          <Text style={styles.infoText}>Timp de simulare: {time} s</Text>
-          <Text style={styles.infoText}>
-            Tensiune: {voltage.toFixed(1)} V | Intensitate: {current.toFixed(1)} A
-          </Text>
-          <Text style={styles.infoText}>
-            Total Hidrogen produs: {totalHydrogen.toFixed(1)} unități
-          </Text>
-          <Text style={styles.infoText}>
-            Total Oxigen produs: {totalOxygen.toFixed(1)} unități
-          </Text>
+                labelColor: (opacity = 1) => `rgba(51, 51, 51, ${opacity})`,
+                style: { borderRadius: 16 },
+                propsForDots: {
+                  r: '3',
+                  strokeWidth: '1',
+                  stroke: '#007BFF',
+                },
+                fillShadowGradientOpacity: 0.6,
+              }}
+              bezier
+              withInnerLines={true}
+              withOuterLines={true}
+              fromZero={true}
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+                alignSelf: 'center',
+              }}
+            />
+            <Text style={styles.axisCaption}>
+              X: Timp (s) | Y: Producție cumulativă
+            </Text>
+            <View style={styles.graphInfo}>
+              <Text style={styles.infoText}>Timp de simulare: {time} s</Text>
+              <Text style={styles.infoText}>
+                Tensiune: {voltage.toFixed(1)} V | Intensitate: {current.toFixed(1)} A
+              </Text>
+              <Text style={styles.infoText}>
+                Total Hidrogen produs: {totalHydrogen.toFixed(1)} unități
+              </Text>
+              <Text style={styles.infoText}>
+                Total Oxigen produs: {totalOxygen.toFixed(1)} unități
+              </Text>
+            </View>
+          </ScrollView>
         </View>
-
-        {/* Reaction Speed Calculations */}
-        <View style={styles.graphInfo}>
-          <Text style={[styles.infoText, { fontWeight: 'bold' }]}>
-            Viteza reacției electrolitice:
-          </Text>
-          <Text style={styles.infoText}>
-            La catod (Hidrogen): {hydrogenRate.toExponential(2)} mol/s
-          </Text>
-          <Text style={styles.infoText}>
-            La anod (Oxigen): {oxygenRate.toExponential(2)} mol/s
-          </Text>
-          <Text style={styles.infoText}>
-            Formula: Pentru Hidrogen, rate = I / (2·F); pentru Oxigen, rate = I / (4·F)
-          </Text>
-        </View>
-        
-        {/* Chemical Reactions */}
-        <View style={styles.reactions}>
-          <View style={styles.reactionLeft}>
-            <Text style={styles.reactionText}>2H₂O + 2e⁻ → H₂(g) + 2OH⁻</Text>
-            <Text style={styles.reactionName}>Reducere</Text>
+        {/* RIGHT PANE: Apparatus (Glasses and connections) */}
+        <View style={styles.rightPane}>
+          <View style={styles.apparatusContainer}>
+            <Battery />
+            <View style={styles.leftContainer}>
+              <View style={styles.container1}>
+                <GasLabel position="left" text="H₂(g)" />
+                <View style={[styles.solution, { backgroundColor: '#FFFFD6' }]}>
+                  {bubbles
+                    .filter(bubble => bubble.side === 'left')
+                    .map(bubble => (
+                      <FloatingBubble key={bubble.id} left={bubble.left} side="left" />
+                    ))}
+                </View>
+                <Screw position="left" />
+              </View>
+            </View>
+            <View style={styles.saltBridgeContainer}>
+              <Text style={styles.saltBridgeLabel}>Punte de Sare</Text>
+              <View style={styles.saltBridge}>
+                <MovingIon initialPosition={20} />
+                <MovingIon initialPosition={80} />
+                <MovingIon initialPosition={140} />
+              </View>
+            </View>
+            <View style={styles.rightContainer}>
+              <View style={styles.container2}>
+                <GasLabel position="right" text="O₂(g)" />
+                <View style={[styles.solution, { backgroundColor: '#D6EAFF' }]}>
+                  {bubbles
+                    .filter(bubble => bubble.side === 'right')
+                    .map(bubble => (
+                      <FloatingBubble key={bubble.id} left={bubble.left} side="right" />
+                    ))}
+                </View>
+                <Screw position="right" />
+              </View>
+            </View>
           </View>
-          <View style={styles.reactionRight}>
-            <Text style={styles.reactionText}>2H₂O → O₂(g) + 4H⁺ + 4e⁻</Text>
-            <Text style={styles.reactionName}>Oxidare</Text>
+          {/* Reactions moved below the glasses */}
+          <View style={styles.reactionsContainer}>
+            <View style={[styles.reactionBox, { backgroundColor: '#FFFFD6' }]}>
+              <Text style={styles.reactionText}>2H₂O + 2e⁻ → H₂(g) + 2OH⁻</Text>
+              <Text style={styles.reactionName}>Reducere</Text>
+            </View>
+            <View style={[styles.reactionBox, { backgroundColor: '#D6EAFF' }]}>
+              <Text style={styles.reactionText}>2H₂O → O₂(g) + 4H⁺ + 4e⁻</Text>
+              <Text style={styles.reactionName}>Oxidare</Text>
+            </View>
           </View>
         </View>
-      </ScrollView>
+      </View>
+      {showGuide && <TheoreticalGuide onClose={() => setShowGuide(false)} />}
     </SafeAreaView>
   );
 };
@@ -353,13 +348,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    width: 1640, // for 1640x1024 resolution
+    height: 1024,
+    alignSelf: 'center',
   },
-  contentContainer: {
+  leftPane: {
+    flex: 3,
     padding: 10,
+  },
+  leftScroll: {
+    flex: 1,
+  },
+  leftContent: {
     paddingBottom: 40,
+  },
+  rightPane: {
+    flex: 2,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 20,
   },
   headerBar: {
     flexDirection: 'row',
@@ -378,149 +388,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
+  sliderContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
   slider: {
-    width: '100%',
-    height: 40,
-    marginBottom: 15,
-  },
-  apparatusContainer: {
-    position: 'relative',
-    height: 350,
-    marginBottom: 20,
-  },
-  leftContainer: {
-    position: 'absolute',
-    left: 10,
-    top: 50,
-    width: '45%',
-    height: 280,
-  },
-  rightContainer: {
-    position: 'absolute',
-    right: 10,
-    top: 50,
-    width: '45%',
-    height: 280,
-  },
-  container1: {
-    width: '100%',
-    height: '100%',
-    borderWidth: 2,
-    borderColor: '#007BFF',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  container2: {
-    width: '100%',
-    height: '100%',
-    borderWidth: 2,
-    borderColor: '#007BFF',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  gasLabel: {
-    position: 'absolute',
-    top: 5,
-    left: 10,
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#000',
-    zIndex: 10,
-  },
-  solution: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  electrode: {
-    position: 'absolute',
-    bottom: 0,
-    left: '50%',
-    marginLeft: -40,
-    width: 80,
-    height: 40,
-    backgroundColor: '#666666',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  electrodeLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  saltBridgeContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 50,
-    alignItems: 'center',
-  },
-  saltBridgeLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  saltBridge: {
-    width: '70%',
+    width: Dimensions.get('window').width * 0.55, // match the graph width
     height: 20,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'black',
-    borderRadius: 10,
-    position: 'relative',
-  },
-  leftArm: {
-    position: 'absolute',
-    top: 20,
-    left: '16%',
-    width: 1,
-    height: 30,
-    backgroundColor: 'black',
-  },
-  rightArm: {
-    position: 'absolute',
-    top: 20,
-    right: '16%',
-    width: 1,
-    height: 30,
-    backgroundColor: 'black',
-  },
-  voltmeterContainer: {
-    position: 'absolute',
-    top: 150,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  horizontalWire: {
-    width: '80%',
-    height: 1,
-    backgroundColor: 'black',
-  },
-  voltmeter: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'black',
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    top: -20,
-  },
-  voltmeterText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  ion: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    top: 5,
+    marginBottom: 15,
   },
   circuitDiagram: {
     flexDirection: 'row',
@@ -566,41 +441,199 @@ const styles = StyleSheet.create({
     color: '#333',
     marginVertical: 2,
   },
-  bubble: {
-    position: 'absolute',
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+  apparatusContainer: {
+    width: '90%',
+    height: 400,
+    marginBottom: 20,
+    position: 'relative',
   },
-  reactions: {
+  leftContainer: {
+    position: 'absolute',
+    left: 10,
+    top: 80, // moved down from 50 to 80
+    width: '45%',
+    height: 280,
+  },
+  rightContainer: {
+    position: 'absolute',
+    right: 10,
+    top: 80, // moved down from 50 to 80
+    width: '45%',
+    height: 280,
+  },
+  container1: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 2,
+    borderColor: '#007BFF',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  container2: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 2,
+    borderColor: '#007BFF',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  gasLabel: {
+    position: 'absolute',
+    top: 5,
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#000',
+    zIndex: 10,
+  },
+  leftGasLabel: {
+    left: 10,
+  },
+  rightGasLabel: {
+    right: 10,
+  },
+  solution: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  // Removed electrode in favor of the Screw component.
+  screw: {
+    width: 30,
+    height: 100,    // mărim înălțimea la 100px pentru a fi mai lungi
+    backgroundColor: '#888888',
+    borderWidth: 1,
+    borderColor: '#555555',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 2,
+    top: 10,       // ajustăm poziția top pentru a fi mai aproape de fire
+    zIndex: 10,
+  },
+  // Adăugăm stiluri specifice pentru fiecare șurub
+  leftScrew: {
+    right: '5%',  // aliniat cu firul roșu
+  },
+  rightScrew: {
+    left: '5%', // aliniat cu firul albastru
+  },
+  screwText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  saltBridgeContainer: {
+    position: 'absolute',
+    top: 150, // moved from 0 so that it appears inside the glasses
+    left: 0,
+    right: 0,
+    height: 50,
+    alignItems: 'center',
+    zIndex: 15, // crescut pentru a fi deasupra paharului albastru
+  },
+  saltBridgeLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  saltBridge: {
+    width: '60%',
+    height: 20,
+    backgroundColor: '#FFFFFF', // white rectangle
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 10,
+    position: 'relative',
+    marginLeft: '-5%', // deplasare spre stânga pentru a se suprapune mai mult peste paharul albastru
+  },
+  // Voltmeter has been removed.
+  horizontalWire: {
+    width: '80%',
+    height: 1,
+    backgroundColor: 'black',
+  },
+  ion: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFCC00',
+    top: 6,
+    zIndex: 16,
+  },
+  reactionsContainer: {
+    width: '90%',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    marginTop: 20,
   },
-  reactionLeft: {
-    alignItems: 'center',
-    width: '48%',
+  reactionBox: {
+    flex: 1,
     padding: 10,
-    backgroundColor: '#d6eaff',
     borderRadius: 10,
-  },
-  reactionRight: {
+    marginHorizontal: 5,
     alignItems: 'center',
-    width: '48%',
-    padding: 10,
-    backgroundColor: '#ffffd6',
-    borderRadius: 10,
   },
   reactionText: {
     fontSize: 12,
     textAlign: 'center',
+    marginBottom: 3,
   },
   reactionName: {
+    fontSize: 12,
     fontWeight: 'bold',
-    marginTop: 5,
     color: '#007BFF',
+  },
+  bubble: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  batteryContainer: {
+    position: 'absolute',
+    top: 10,
+    left: '25%',
+    right: '25%',
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  
+  battery: {
+    width: 120,
+    height: 50,
+    backgroundColor: '#999',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#666',
+  },
+  
+  batteryLabel: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  
+  wireRed: {
+    position: 'absolute',
+    width: 2,
+    height: 70,
+    backgroundColor: 'red',
+    left: '30%',  // aliniat cu șurubul stâng
+    top: '100%',
+  },
+  
+  wireBlue: {
+    position: 'absolute', 
+    width: 2,
+    height: 70,
+    backgroundColor: 'blue',
+    right: '30%', // aliniat cu șurubul drept
+    top: '100%',
   },
 });
 
