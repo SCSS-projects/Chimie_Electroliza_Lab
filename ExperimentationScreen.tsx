@@ -184,13 +184,13 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
         <View style={styles.leftPane}>
           <ScrollView style={styles.leftScroll} contentContainerStyle={styles.leftContent}>
             <View style={styles.headerBar}>
-              <Button title="BACK" onPress={onBack} color="#007BFF" />
+              <Button title="Inapoi" onPress={onBack} color="#007BFF" />
               <Text style={styles.headerTitle}>Experimentare</Text>
               <Button title="GHID" onPress={() => setShowGuide(true)} color="#007BFF" />
             </View>
             <View style={styles.controls}>
               <View style={styles.sliderContainer}>
-                <Text style={styles.controlLabel}>Voltage: {voltage.toFixed(1)} V</Text>
+                <Text style={styles.controlLabel}>Tensiune: {voltage.toFixed(1)} V</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={1}
@@ -204,7 +204,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
                 />
               </View>
               <View style={styles.sliderContainer}>
-                <Text style={styles.controlLabel}>Current: {current.toFixed(1)} A</Text>
+                <Text style={styles.controlLabel}>Intensitate: {current.toFixed(1)} A</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={0.1}
@@ -220,7 +220,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
             </View>
             <View style={styles.circuitDiagram}>
               <View style={styles.battery}>
-                <Text style={styles.batteryText}>DC Battery</Text>
+                <Text style={styles.batteryText}>Sursa</Text>
                 <Text style={styles.batteryValue}>{voltage.toFixed(1)} V {current.toFixed(1)} A</Text>
               </View>
             </View>

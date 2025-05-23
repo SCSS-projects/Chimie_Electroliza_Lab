@@ -3,11 +3,15 @@
   "license": "0BSD",
   "version": "1.0.0",
   "main": "index.ts",
+  "homepage": "https://scss-projects.github.io/chemistrysimulator",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build": "npx expo export",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
@@ -25,6 +29,7 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~18.3.12",
     "@types/react-native": "^0.73.0",
+    "gh-pages": "^6.3.0",
     "typescript": "^5.3.3"
   },
   "private": true,
