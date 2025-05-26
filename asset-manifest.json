@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/chemistrysimulator/static/css/main.ef9ab278.css",
+    "main.js": "/chemistrysimulator/static/js/main.261c3aab.js",
+    "static/js/82.8bbfd13f.js": "/chemistrysimulator/static/js/82.8bbfd13f.js",
+    "index.html": "/chemistrysimulator/index.html",
+    "manifest.json": "/chemistrysimulator/manifest.json",
+    "serve.json": "/chemistrysimulator/serve.json",
+    "main.ef9ab278.css.map": "/chemistrysimulator/static/css/main.ef9ab278.css.map",
+    "main.261c3aab.js.map": "/chemistrysimulator/static/js/main.261c3aab.js.map",
+    "82.8bbfd13f.js.map": "/chemistrysimulator/static/js/82.8bbfd13f.js.map"
+  },
+  "entrypoints": [
+    "static/js/82.8bbfd13f.js",
+    "static/css/main.ef9ab278.css",
+    "static/js/main.261c3aab.js"
+  ]
+}
