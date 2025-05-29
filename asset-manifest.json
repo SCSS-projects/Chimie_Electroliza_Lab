@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/Chimie_Electroliza_Lab/static/css/main.ef9ab278.css",
+    "main.js": "/Chimie_Electroliza_Lab/static/js/main.ec0cb826.js",
+    "static/js/82.8bbfd13f.js": "/Chimie_Electroliza_Lab/static/js/82.8bbfd13f.js",
+    "index.html": "/Chimie_Electroliza_Lab/index.html",
+    "serve.json": "/Chimie_Electroliza_Lab/serve.json",
+    "manifest.json": "/Chimie_Electroliza_Lab/manifest.json",
+    "main.ef9ab278.css.map": "/Chimie_Electroliza_Lab/static/css/main.ef9ab278.css.map",
+    "main.ec0cb826.js.map": "/Chimie_Electroliza_Lab/static/js/main.ec0cb826.js.map",
+    "82.8bbfd13f.js.map": "/Chimie_Electroliza_Lab/static/js/82.8bbfd13f.js.map"
+  },
+  "entrypoints": [
+    "static/js/82.8bbfd13f.js",
+    "static/css/main.ef9ab278.css",
+    "static/js/main.ec0cb826.js"
+  ]
+}
