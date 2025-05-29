@@ -90,7 +90,7 @@ const Screw: React.FC<{ position: 'left' | 'right' }> = ({ position }) => (
     styles.screw, 
     position === 'left' ? styles.leftScrew : styles.rightScrew
   ]}>
-    <Text style={styles.screwText}>Pt</Text>
+    <Text style={styles.screwText}>C</Text>
   </View>
 );
 
@@ -128,7 +128,16 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
 
   const productionFactor = 10;
   const faraday = 96485;
-  
+  const gasConstant = 0.0821; // L·atm/(mol·K)
+  const temperature = 298; // K (25°C)
+  const pressure = 1; // atm
+
+  // Calculate gas production rate in mL/s
+  const calculateGasRate = (current: number, moles: number) => {
+    const volume = (moles * gasConstant * temperature) / pressure;
+    return volume * 1000; // Convert to mL
+  };
+
   useEffect(() => {
     if (voltage > 1 && current > 0.1) {
       const bubbleInterval = setInterval(() => {
@@ -153,10 +162,10 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
   useEffect(() => {
     const trackingInterval = setInterval(() => {
       if (voltage > 1 && current > 0.1) {
-        const hydrogenProduced = current * productionFactor;
-        const oxygenProduced = (current * productionFactor) / 2;
-        setHydrogenData(prev => [...prev, (prev.slice(-1)[0] || 0) + hydrogenProduced]);
-        setOxygenData(prev => [...prev, (prev.slice(-1)[0] || 0) + oxygenProduced]);
+        const hydrogenRate = calculateGasRate(current, current / (2 * faraday));
+        const oxygenRate = calculateGasRate(current, current / (4 * faraday));
+        setHydrogenData(prev => [...prev, (prev.slice(-1)[0] || 0) + hydrogenRate]);
+        setOxygenData(prev => [...prev, (prev.slice(-1)[0] || 0) + oxygenRate]);
         setTime(prev => prev + 1);
       }
     }, 1000);
@@ -173,9 +182,6 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
 
   const totalHydrogen = hydrogenData.length ? hydrogenData[hydrogenData.length - 1] : 0;
   const totalOxygen = oxygenData.length ? oxygenData[oxygenData.length - 1] : 0;
-
-  const hydrogenRate = current / (2 * faraday);
-  const oxygenRate = current / (4 * faraday);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -224,7 +230,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
                 <Text style={styles.batteryValue}>{voltage.toFixed(1)} V {current.toFixed(1)} A</Text>
               </View>
             </View>
-            <Text style={styles.graphTitle}>Rate de Producție a Gazelor</Text>
+            <Text style={styles.graphTitle}>Viteza de Producție a Gazelor</Text>
             <LineChart
               data={{
                 labels: chartLabels,
@@ -278,10 +284,10 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
                 Tensiune: {voltage.toFixed(1)} V | Intensitate: {current.toFixed(1)} A
               </Text>
               <Text style={styles.infoText}>
-                Total Hidrogen produs: {totalHydrogen.toFixed(1)} unități
+                Viteza de producere H₂: {calculateGasRate(current, current / (2 * faraday)).toFixed(2)} mL/s
               </Text>
               <Text style={styles.infoText}>
-                Total Oxigen produs: {totalOxygen.toFixed(1)} unități
+                Viteza de producere O₂: {calculateGasRate(current, current / (4 * faraday)).toFixed(2)} mL/s
               </Text>
             </View>
           </ScrollView>
@@ -293,7 +299,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
             <View style={styles.leftContainer}>
               <View style={styles.container1}>
                 <GasLabel position="left" text="H₂(g)" />
-                <View style={[styles.solution, { backgroundColor: '#FFFFD6' }]}>
+                <View style={[styles.solution, { backgroundColor: '#D6EAFF' }]}>
                   {bubbles
                     .filter(bubble => bubble.side === 'left')
                     .map(bubble => (
@@ -314,7 +320,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
             <View style={styles.rightContainer}>
               <View style={styles.container2}>
                 <GasLabel position="right" text="O₂(g)" />
-                <View style={[styles.solution, { backgroundColor: '#D6EAFF' }]}>
+                <View style={[styles.solution, { backgroundColor: '#FFE4E1' }]}>
                   {bubbles
                     .filter(bubble => bubble.side === 'right')
                     .map(bubble => (
@@ -403,11 +409,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   battery: {
+    width: 180, // Increased width
+    height: 50,
+    backgroundColor: '#999',
+    borderRadius: 5,
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#007BFF',
-    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#666',
   },
   batteryText: {
     fontSize: 14,
@@ -509,15 +518,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
-    top: 10,       // ajustăm poziția top pentru a fi mai aproape de fire
+    top: 30,       // Adjusted top position to be higher, near wire ends
     zIndex: 10,
   },
   // Adăugăm stiluri specifice pentru fiecare șurub
   leftScrew: {
-    right: '5%',  // aliniat cu firul roșu
+    right: '15%',  // Moved further from salt bridge
   },
   rightScrew: {
-    left: '5%', // aliniat cu firul albastru
+    left: '15%',   // Moved further from salt bridge
   },
   screwText: {
     color: '#ffffff',
@@ -526,12 +535,12 @@ const styles = StyleSheet.create({
   },
   saltBridgeContainer: {
     position: 'absolute',
-    top: 150, // moved from 0 so that it appears inside the glasses
+    top: 200, // Adjusted top to be below the electrodes
     left: 0,
     right: 0,
     height: 50,
     alignItems: 'center',
-    zIndex: 15, // crescut pentru a fi deasupra paharului albastru
+    zIndex: 15,
   },
   saltBridgeLabel: {
     fontSize: 14,
@@ -539,14 +548,14 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   saltBridge: {
-    width: '60%',
+    width: '40%',  // Reduced width
     height: 20,
-    backgroundColor: '#FFFFFF', // white rectangle
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: 'black',
     borderRadius: 10,
     position: 'relative',
-    marginLeft: '-5%', // deplasare spre stânga pentru a se suprapune mai mult peste paharul albastru
+    marginLeft: '-5%',
   },
   // Voltmeter has been removed.
   horizontalWire: {
@@ -600,40 +609,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 5,
   },
-  
-  battery: {
-    width: 120,
-    height: 50,
-    backgroundColor: '#999',
-    borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#666',
-  },
-  
+
   batteryLabel: {
-    color: '#FFF',
+    color: '#000', // Changed text color to black
     fontSize: 12,
     fontWeight: 'bold',
   },
-  
+
   wireRed: {
     position: 'absolute',
     width: 2,
-    height: 70,
+    height: 120, // Increased height to reach electrodes
     backgroundColor: 'red',
-    left: '30%',  // aliniat cu șurubul stâng
-    top: '100%',
+    left: '30%',
+    top: '100%', // Still relative to battery container
   },
-  
+
   wireBlue: {
-    position: 'absolute', 
+    position: 'absolute',
     width: 2,
-    height: 70,
+    height: 120, // Increased height to reach electrodes
     backgroundColor: 'blue',
-    right: '30%', // aliniat cu șurubul drept
-    top: '100%',
+    right: '30%',
+    top: '100%', // Still relative to battery container
   },
 });
 

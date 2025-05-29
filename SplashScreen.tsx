@@ -9,9 +9,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onGetStarted }) => {
   return (
     <div className="splash-screen">
       <div className="splash-content">
-        <h1>Electric ChemLab</h1>
-        <p>Simulate Electrolysis Experiments</p>
-        <button onClick={onGetStarted}>Get Started</button>
+        <h1>Laborator electroliza</h1>
+        <p>Simulare experimente de electroliză</p>
+        <button onClick={onGetStarted}>Să incepem</button>
       </div>
     </div>
   );
