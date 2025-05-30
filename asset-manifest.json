@@ -1,18 +1,18 @@
 {
   "files": {
     "main.css": "/Chimie_Electroliza_Lab/static/css/main.ef9ab278.css",
-    "main.js": "/Chimie_Electroliza_Lab/static/js/main.3de5f284.js",
-    "static/js/82.8bbfd13f.js": "/Chimie_Electroliza_Lab/static/js/82.8bbfd13f.js",
+    "main.js": "/Chimie_Electroliza_Lab/static/js/main.86bbe236.js",
+    "static/js/938.c2ef2634.js": "/Chimie_Electroliza_Lab/static/js/938.c2ef2634.js",
     "index.html": "/Chimie_Electroliza_Lab/index.html",
     "serve.json": "/Chimie_Electroliza_Lab/serve.json",
     "manifest.json": "/Chimie_Electroliza_Lab/manifest.json",
     "main.ef9ab278.css.map": "/Chimie_Electroliza_Lab/static/css/main.ef9ab278.css.map",
-    "main.3de5f284.js.map": "/Chimie_Electroliza_Lab/static/js/main.3de5f284.js.map",
-    "82.8bbfd13f.js.map": "/Chimie_Electroliza_Lab/static/js/82.8bbfd13f.js.map"
+    "main.86bbe236.js.map": "/Chimie_Electroliza_Lab/static/js/main.86bbe236.js.map",
+    "938.c2ef2634.js.map": "/Chimie_Electroliza_Lab/static/js/938.c2ef2634.js.map"
   },
   "entrypoints": [
-    "static/js/82.8bbfd13f.js",
+    "static/js/938.c2ef2634.js",
     "static/css/main.ef9ab278.css",
-    "static/js/main.3de5f284.js"
+    "static/js/main.86bbe236.js"
   ]
 }
