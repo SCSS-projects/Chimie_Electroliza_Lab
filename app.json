@@ -7,6 +7,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "web": {
+      "bundler": "webpack",
       "publicPath": "/Chimie_Electroliza_Lab/"
     }
   }

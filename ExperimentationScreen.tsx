@@ -94,15 +94,30 @@ const Screw: React.FC<{ position: 'left' | 'right' }> = ({ position }) => (
   </View>
 );
 
-// Adaugă componenta Battery
+// Modified Battery component - now only contains the accumulator and wires
 const Battery: React.FC = () => (
-  <View style={styles.batteryContainer}>
-    <View style={styles.battery}>
+  <View style={styles.batteryArea}> // batteryArea will position this block
+    {/* Accumulator */}
+    <View style={styles.batteryBlock}>
       <Text style={styles.batteryLabel}>Acumulator</Text>
     </View>
-    {/* Fire de conexiune */}
-    <View style={styles.wireRed} />
-    <View style={styles.wireBlue} />
+
+    {/* Wires connecting accumulator to electrodes, positioned absolutely within batteryArea */}
+    <View style={styles.redWire} />
+    <View style={styles.blueWire} />
+  </View>
+);
+
+// New separate SaltBridge component
+const SaltBridge: React.FC = () => (
+  <View style={styles.saltBridgeContainer}>
+    <Text style={styles.saltBridgeLabel}>Punte de Sare</Text>
+    <View style={styles.saltBridge}>
+      {/* Ions moving in the salt bridge */}
+      <MovingIon initialPosition={20} />
+      <MovingIon initialPosition={80} />
+      <MovingIon initialPosition={140} />
+    </View>
   </View>
 );
 
@@ -295,7 +310,14 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
         {/* RIGHT PANE: Apparatus (Glasses and connections) */}
         <View style={styles.rightPane}>
           <View style={styles.apparatusContainer}>
+            
+            {/* Render the SaltBridge component first so it's visually behind wires/battery if needed */}
+            <SaltBridge />
+
+            {/* Render the Battery component (containing accumulator and wires) */}
             <Battery />
+            
+            {/* Left container for H2 */}
             <View style={styles.leftContainer}>
               <View style={styles.container1}>
                 <GasLabel position="left" text="H₂(g)" />
@@ -306,17 +328,12 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
                       <FloatingBubble key={bubble.id} left={bubble.left} side="left" />
                     ))}
                 </View>
+                {/* Screw (electrode) positioned inside the container */}
                 <Screw position="left" />
               </View>
             </View>
-            <View style={styles.saltBridgeContainer}>
-              <Text style={styles.saltBridgeLabel}>Punte de Sare</Text>
-              <View style={styles.saltBridge}>
-                <MovingIon initialPosition={20} />
-                <MovingIon initialPosition={80} />
-                <MovingIon initialPosition={140} />
-              </View>
-            </View>
+
+            {/* Right container for O2 */}
             <View style={styles.rightContainer}>
               <View style={styles.container2}>
                 <GasLabel position="right" text="O₂(g)" />
@@ -327,6 +344,7 @@ const ExperimentationScreen: React.FC<ExperimentationScreenProps> = ({ onBack })
                       <FloatingBubble key={bubble.id} left={bubble.left} side="right" />
                     ))}
                 </View>
+                {/* Screw (electrode) positioned inside the container */}
                 <Screw position="right" />
               </View>
             </View>
@@ -409,14 +427,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   battery: {
-    width: 180, // Increased width
-    height: 50,
-    backgroundColor: '#999',
-    borderRadius: 5,
+    width: 120, // Default width, adjust if needed for the circuit diagram
+    height: 50, // Default height, adjust if needed for the circuit diagram
+    backgroundColor: '#999', // Default color, adjust if needed
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#666',
+    borderWidth: 1,
+    borderColor: '#007BFF',
   },
   batteryText: {
     fontSize: 14,
@@ -459,16 +477,16 @@ const styles = StyleSheet.create({
   leftContainer: {
     position: 'absolute',
     left: 10,
-    top: 80, // moved down from 50 to 80
-    width: '45%',
-    height: 280,
+    top: 120, // moved down to accommodate higher battery
+    width: '40%', // slightly reduced to make room for salt bridge
+    height: 250,
   },
   rightContainer: {
     position: 'absolute',
     right: 10,
-    top: 80, // moved down from 50 to 80
-    width: '45%',
-    height: 280,
+    top: 120, // moved down to accommodate higher battery
+    width: '40%', // slightly reduced to make room for salt bridge
+    height: 250,
   },
   container1: {
     width: '100%',
@@ -507,10 +525,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  // Removed electrode in favor of the Screw component.
   screw: {
     width: 30,
-    height: 100,    // mărim înălțimea la 100px pentru a fi mai lungi
+    height: 100,
     backgroundColor: '#888888',
     borderWidth: 1,
     borderColor: '#555555',
@@ -518,59 +535,112 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
-    top: 30,       // Adjusted top position to be higher, near wire ends
+    top: 120, // Adjusted position for electrodes
     zIndex: 10,
   },
-  // Adăugăm stiluri specifice pentru fiecare șurub
   leftScrew: {
-    right: '15%',  // Moved further from salt bridge
+    right: '15%',
   },
   rightScrew: {
-    left: '15%',   // Moved further from salt bridge
+    left: '15%',
   },
   screwText: {
     color: '#ffffff',
     fontSize: 10,
     fontWeight: 'bold',
   },
-  saltBridgeContainer: {
+  // Styles for the overall battery/salt bridge area container
+  batteryArea: {
     position: 'absolute',
-    top: 200, // Adjusted top to be below the electrodes
-    left: 0,
-    right: 0,
-    height: 50,
-    alignItems: 'center',
-    zIndex: 15,
+    top: 20, // Adjust this to move the whole block up/down
+    left: '20%', // Adjust left/right to center the block above the beakers
+    right: '20%',
+    alignItems: 'center', // Center children horizontally
+    justifyContent: 'flex-start', // Stack children from the top
+    zIndex: 20,
+    // Removed flexdirection: 'column' as it's default and not needed if stacking
   },
-  saltBridgeLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
+  // Styles for the U-shaped salt bridge
+  saltBridgeContainer: {
+    // Positioned absolutely within apparatusContainer to span over beakers
+    position: 'absolute',
+    top: 50, // Adjust this to position the salt bridge vertically
+    left: '30%', // Adjust left/right to center over the beakers
+    right: '30%',
+    alignItems: 'center', // Center the salt bridge horizontally within its container
+    zIndex: 18, // Ensure it's above beakers
   },
   saltBridge: {
-    width: '40%',  // Reduced width
-    height: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    width: 180, // Adjust width to span over the accumulator and beakers
+    height: 100, // Adjust height for the curve
+    backgroundColor: 'transparent',
+    borderTopLeftRadius: 90, // Adjust radius based on width and height
+    borderTopRightRadius: 90,
+    borderWidth: 2,
     borderColor: 'black',
-    borderRadius: 10,
-    position: 'relative',
-    marginLeft: '-5%',
+    borderBottomWidth: 0,
+    alignItems: 'center', // Center label horizontally
+    justifyContent: 'flex-start', // Position label at the top
+    position: 'relative', // Needed for absolute positioning of label if needed
   },
-  // Voltmeter has been removed.
-  horizontalWire: {
-    width: '80%',
-    height: 1,
-    backgroundColor: 'black',
+  saltBridgeLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 5, // Space for the label inside the curve
+    // Position label absolutely within saltBridge if more precise placement needed
+    // position: 'absolute',
+    // top: 10, // Example
+    // left: '50%', // Example
+    // transform: [{ translateX: -('50%' of label width) }] // Example to truly center
   },
+  // Styles for the Accumulator block
+  batteryBlock: {
+    width: 150, // Adjust width as needed
+    height: 40,
+    backgroundColor: '#777',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    // Position this below the salt bridge - managed by flexbox in batteryArea or explicit top
+    marginTop: 20, // Adjust spacing below salt bridge
+    zIndex: 10, // Ensure it's below salt bridge visually
+  },
+  batteryLabel: { // Label inside the battery block
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  // Styles for the wires connecting Accumulator to Electrodes
+  redWire: {
+    position: 'absolute',
+    width: 3,
+    height: 100, // Adjust height to reach electrode top
+    backgroundColor: 'red',
+    left: '45%', // Adjust left/right to align with battery block and electrodes
+    top: 40, // Position relative to batteryArea, should start from batteryBlock bottom
+    zIndex: 15, // Ensure wires are above beakers and electrodes
+  },
+  blueWire: {
+    position: 'absolute',
+    width: 3,
+    height: 100, // Adjust height to reach electrode top
+    backgroundColor: 'blue',
+    right: '45%', // Adjust left/right to align with battery block and electrodes
+    top: 40, // Position relative to batteryArea, should start from batteryBlock bottom
+    zIndex: 15, // Ensure wires are above beakers and electrodes
+  },
+  // Styles for the yellow ions (kept in case needed later)
   ion: {
     position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#FFCC00',
-    top: 6,
-    zIndex: 16,
+    // Position relative to saltBridge if rendered inside, adjust top/left as needed
+    top: 20, // Example position within the salt bridge curve
+    left: '20%', // Example horizontal position
+    zIndex: 19, // Ensure ions are above the salt bridge border
   },
   reactionsContainer: {
     width: '90%',
@@ -600,38 +670,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-  },
-  batteryContainer: {
-    position: 'absolute',
-    top: 10,
-    left: '25%',
-    right: '25%',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-
-  batteryLabel: {
-    color: '#000', // Changed text color to black
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-
-  wireRed: {
-    position: 'absolute',
-    width: 2,
-    height: 120, // Increased height to reach electrodes
-    backgroundColor: 'red',
-    left: '30%',
-    top: '100%', // Still relative to battery container
-  },
-
-  wireBlue: {
-    position: 'absolute',
-    width: 2,
-    height: 120, // Increased height to reach electrodes
-    backgroundColor: 'blue',
-    right: '30%',
-    top: '100%', // Still relative to battery container
+    backgroundColor: 'rgba(173, 216, 230, 0.8)' // Assuming a default color
   },
 });
 
